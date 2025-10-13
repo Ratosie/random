@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime
 import numpy as np
+from datetime import datetime
 
 # Page configuration
 st.set_page_config(
@@ -44,13 +42,6 @@ st.markdown("""
         text-align: center;
         margin-bottom: 2rem;
     }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 10px;
-        text-align: center;
-        margin: 0.5rem;
-    }
     .story-section {
         background-color: white;
         padding: 1.5rem;
@@ -67,8 +58,6 @@ st.markdown("### Understanding healthcare through patient stories")
 
 # Sidebar filters
 st.sidebar.header("🔍 Filter the View")
-st.sidebar.markdown("Adjust these filters to explore different perspectives")
-
 year_filter = st.sidebar.selectbox(
     "Select Year",
     options=["All Years"] + sorted(df['date_of_admission'].dt.year.dropna().unique().tolist())
@@ -94,66 +83,35 @@ if condition_filter != "All Conditions":
     filtered_df = filtered_df[filtered_df['medical_condition'] == condition_filter]
 filtered_df = filtered_df[(filtered_df['age'] >= age_range[0]) & (filtered_df['age'] <= age_range[1])]
 
-# Key Metrics Row
+# Key Metrics
 st.markdown("## 📊 Quick Overview")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.metric(
-        "Total Patients", 
-        f"{len(filtered_df):,}",
-        help="Number of patients in current view"
-    )
+    st.metric("Total Patients", f"{len(filtered_df):,}")
 
 with col2:
     avg_stay = filtered_df['length_of_stay'].mean()
-    st.metric(
-        "Avg Hospital Stay", 
-        f"{avg_stay:.1f} days",
-        help="Average time patients spend in hospital"
-    )
+    st.metric("Avg Hospital Stay", f"{avg_stay:.1f} days")
 
 with col3:
     avg_bill = filtered_df['billing_amount'].mean()
-    st.metric(
-        "Avg Medical Bill", 
-        f"${avg_bill:,.0f}",
-        help="Average cost per hospital visit"
-    )
+    st.metric("Avg Medical Bill", f"${avg_bill:,.0f}")
 
 with col4:
     recovery_rate = (filtered_df['test_results'] == 'Normal').mean() * 100
-    st.metric(
-        "Positive Outcomes", 
-        f"{recovery_rate:.1f}%",
-        help="Percentage of patients with normal test results"
-    )
+    st.metric("Positive Outcomes", f"{recovery_rate:.1f}%")
 
-# Main Visualizations - Story-based approach
+# Story 1: Patient Demographics
 st.markdown("---")
-
-# Story 1: Who comes to the hospital?
 st.markdown('<div class="story-section">', unsafe_allow_html=True)
 st.markdown("## 👥 Patient Stories: Who Visits Our Hospital?")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    # Age distribution with story context
-    fig_age = px.histogram(
-        filtered_df, 
-        x='age', 
-        nbins=20,
-        title="Patient Ages: From Young Adults to Seniors",
-        labels={'age': 'Age', 'count': 'Number of Patients'}
-    )
-    fig_age.update_layout(
-        showlegend=False,
-        xaxis_title="Age",
-        yaxis_title="Number of Patients"
-    )
-    st.plotly_chart(fig_age, use_container_width=True)
-    
+    st.markdown("### Age Distribution")
+    st.bar_chart(filtered_df['age'].value_counts().sort_index())
     st.markdown("""
     **What this tells us:** 
     - Different age groups face different health challenges
@@ -161,42 +119,27 @@ with col1:
     """)
 
 with col2:
-    # Medical conditions by age group
-    condition_counts = filtered_df['medical_condition'].value_counts().head(8)
-    fig_conditions = px.bar(
-        x=condition_counts.values,
-        y=condition_counts.index,
-        orientation='h',
-        title="Most Common Health Conditions",
-        labels={'x': 'Number of Patients', 'y': 'Medical Condition'}
-    )
-    fig_conditions.update_layout(showlegend=False)
-    st.plotly_chart(fig_conditions, use_container_width=True)
-    
+    st.markdown("### Most Common Conditions")
+    top_conditions = filtered_df['medical_condition'].value_counts().head(8)
+    st.dataframe(top_conditions, use_container_width=True)
     st.markdown("""
     **What this tells us:**
     - Some conditions are more common than others
     - Early detection can make a big difference
     """)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Story 2: The Hospital Experience
+# Story 2: Hospital Experience
 st.markdown('<div class="story-section">', unsafe_allow_html=True)
 st.markdown("## 🏥 The Hospital Journey: What to Expect")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    # Admission types - emergency vs planned
+    st.markdown("### How Patients Arrive")
     admission_counts = filtered_df['admission_type'].value_counts()
-    fig_admission = px.pie(
-        values=admission_counts.values,
-        names=admission_counts.index,
-        title="How Patients Arrive: Emergency vs Planned Visits",
-        color_discrete_sequence=px.colors.qualitative.Set3
-    )
-    st.plotly_chart(fig_admission, use_container_width=True)
-    
+    st.dataframe(admission_counts, use_container_width=True)
     st.markdown("""
     **Understanding your visit:**
     - **Emergency**: Unexpected, urgent care needed
@@ -205,22 +148,17 @@ with col1:
     """)
 
 with col2:
-    # Length of stay distribution
-    fig_stay = px.box(
-        filtered_df, 
-        y='length_of_stay',
-        title="Typical Hospital Stay Duration",
-        labels={'length_of_stay': 'Days in Hospital'}
-    )
-    fig_stay.update_layout(showlegend=False)
-    st.plotly_chart(fig_stay, use_container_width=True)
-    
+    st.markdown("### Hospital Stay Duration")
+    st.metric("Average Stay", f"{filtered_df['length_of_stay'].mean():.1f} days")
+    st.metric("Shortest Stay", f"{filtered_df['length_of_stay'].min()} days")
+    st.metric("Longest Stay", f"{filtered_df['length_of_stay'].max()} days")
     st.markdown("""
     **Hospital stay facts:**
     - Most stays are relatively short
     - Recovery times vary by condition
     - Every patient's journey is unique
     """)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Story 3: Recovery and Outcomes
@@ -230,120 +168,62 @@ st.markdown("## 💪 Recovery Stories: Patient Outcomes")
 col1, col2 = st.columns(2)
 
 with col1:
-    # Test results - the recovery story
+    st.markdown("### Test Results")
     results = filtered_df['test_results'].value_counts()
-    fig_results = px.bar(
-        x=results.index,
-        y=results.values,
-        title="Patient Test Results: The Road to Recovery",
-        labels={'x': 'Test Result', 'y': 'Number of Patients'},
-        color=results.index,
-        color_discrete_map={
-            'Normal': '#2ecc71',
-            'Abnormal': '#e74c3c', 
-            'Inconclusive': '#f39c12'
-        }
-    )
-    st.plotly_chart(fig_results, use_container_width=True)
     
-    st.markdown("""
-    **Understanding your results:**
-    - **Normal**: Great news! Treatment is working
-    - **Abnormal**: Needs more attention
-    - **Inconclusive**: More tests may be needed
-    """)
+    # Create a simple progress bar visualization
+    for result, count in results.items():
+        total = len(filtered_df)
+        percentage = (count / total) * 100
+        if result == 'Normal':
+            color = '🟢'
+        elif result == 'Abnormal':
+            color = '🔴'
+        else:
+            color = '🟡'
+        
+        st.write(f"{color} **{result}**: {count} patients ({percentage:.1f}%)")
+        st.progress(percentage/100)
 
 with col2:
-    # Common medications
-    top_meds = filtered_df['medication'].value_counts().head(8)
-    fig_meds = px.bar(
-        x=top_meds.values,
-        y=top_meds.index,
-        orientation='h',
-        title="Most Common Treatments",
-        labels={'x': 'Number of Patients', 'y': 'Medication'}
-    )
-    st.plotly_chart(fig_meds, use_container_width=True)
-    
-    st.markdown("""
-    **Treatment insights:**
-    - Different conditions need different approaches
-    - Medications help manage symptoms
-    - Always follow doctor's instructions
-    """)
+    st.markdown("### Common Treatments")
+    top_meds = filtered_df['medication'].value_counts().head(6)
+    for med, count in top_meds.items():
+        st.write(f"💊 **{med}**: {count} patients")
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Story 4: The Financial Side
+# Story 4: Financial Side
 st.markdown('<div class="story-section">', unsafe_allow_html=True)
 st.markdown("## 💰 Understanding Healthcare Costs")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    # Cost distribution
-    fig_cost = px.histogram(
-        filtered_df,
-        x='billing_amount',
-        nbins=20,
-        title="Healthcare Costs: What to Expect",
-        labels={'billing_amount': 'Medical Bill Amount', 'count': 'Number of Patients'}
-    )
-    fig_cost.update_layout(showlegend=False)
-    st.plotly_chart(fig_cost, use_container_width=True)
+    st.markdown("### Cost Distribution")
+    st.metric("Average Bill", f"${filtered_df['billing_amount'].mean():,.0f}")
+    st.metric("Lowest Bill", f"${filtered_df['billing_amount'].min():,.0f}")
+    st.metric("Highest Bill", f"${filtered_df['billing_amount'].max():,.0f}")
     
-    st.markdown("""
-    **Cost insights:**
-    - Healthcare costs vary widely
-    - Insurance helps manage expenses
-    - Planning ahead can reduce stress
-    """)
+    # Simple histogram using st.bar_chart
+    cost_ranges = pd.cut(filtered_df['billing_amount'], bins=10)
+    cost_dist = cost_ranges.value_counts().sort_index()
+    st.bar_chart(cost_dist)
 
 with col2:
-    # Insurance coverage
+    st.markdown("### Insurance Providers")
     insurance_counts = filtered_df['insurance_provider'].value_counts().head(6)
-    fig_insurance = px.pie(
-        values=insurance_counts.values,
-        names=insurance_counts.index,
-        title="How Patients Pay for Care",
-        color_discrete_sequence=px.colors.qualitative.Pastel
-    )
-    st.plotly_chart(fig_insurance, use_container_width=True)
-    
-    st.markdown("""
-    **Insurance facts:**
-    - Different providers offer various plans
-    - Coverage affects out-of-pocket costs
-    - Always verify your benefits
-    """)
+    st.dataframe(insurance_counts, use_container_width=True)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Monthly Trends Story - FIXED VERSION
+# Monthly Trends
 st.markdown('<div class="story-section">', unsafe_allow_html=True)
 st.markdown("## 📅 Hospital Visits Through the Year")
 
-# Create complete monthly data (ensure all 12 months)
+# Monthly admissions trend
 monthly_trend = filtered_df['date_of_admission'].dt.month.value_counts().sort_index()
-
-# Ensure we have all 12 months
-all_months = pd.Series(range(1, 13), index=range(1, 13))
-monthly_trend_complete = all_months.map(monthly_trend).fillna(0)
-
-month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-fig_trend = px.line(
-    x=month_names,
-    y=monthly_trend_complete.values,
-    title="When Do People Need Hospital Care?",
-    labels={'x': 'Month', 'y': 'Number of Admissions'},
-    markers=True
-)
-fig_trend.update_traces(line=dict(width=4), marker=dict(size=8))
-fig_trend.update_layout(
-    xaxis_title="Month",
-    yaxis_title="Number of Hospital Visits"
-)
-st.plotly_chart(fig_trend, use_container_width=True)
+st.line_chart(monthly_trend)
 
 st.markdown("""
 **Seasonal patterns:**
@@ -353,73 +233,7 @@ st.markdown("""
 """)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Additional Story: Gender and Blood Type
-st.markdown('<div class="story-section">', unsafe_allow_html=True)
-st.markdown("## 👨‍👩‍👧‍👦 More About Our Patients")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    # Gender distribution
-    gender_counts = filtered_df['gender'].value_counts()
-    fig_gender = px.pie(
-        values=gender_counts.values,
-        names=gender_counts.index,
-        title="Patient Gender Distribution",
-        color_discrete_sequence=['#FF9999', '#66B2FF']
-    )
-    st.plotly_chart(fig_gender, use_container_width=True)
-
-with col2:
-    # Blood type distribution
-    blood_counts = filtered_df['blood_type'].value_counts()
-    fig_blood = px.bar(
-        x=blood_counts.index,
-        y=blood_counts.values,
-        title="Patient Blood Types",
-        labels={'x': 'Blood Type', 'y': 'Number of Patients'},
-        color=blood_counts.index
-    )
-    st.plotly_chart(fig_blood, use_container_width=True)
-
-st.markdown("""
-**Health diversity:**
-- Different genders may have different health needs
-- Blood types are important for medical treatments
-- Everyone's health journey is unique
-""")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Success Stories Section
-st.markdown('<div class="story-section">', unsafe_allow_html=True)
-st.markdown("## 🌟 Health Success Stories")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    # Quick recovery stories
-    quick_recovery = filtered_df[filtered_df['length_of_stay'] <= 3].shape[0]
-    st.metric("Quick Recoveries", f"{quick_recovery:,}", "Short hospital stays")
-
-with col2:
-    # Normal test results
-    normal_tests = (filtered_df['test_results'] == 'Normal').sum()
-    st.metric("Positive Outcomes", f"{normal_tests:,}", "Good test results")
-
-with col3:
-    # Planned visits (less stressful)
-    planned_visits = (filtered_df['admission_type'] == 'Elective').sum()
-    st.metric("Planned Visits", f"{planned_visits:,}", "Scheduled care")
-
-st.markdown("""
-**Celebrating health wins:**
-- Many patients have short, successful hospital stays
-- Positive outcomes are common
-- Planning ahead leads to better experiences
-""")
-st.markdown('</div>', unsafe_allow_html=True)
-
-# Footer with helpful information
+# Footer
 st.markdown("---")
 st.markdown("""
 ### 💡 Helpful Information for Patients
@@ -428,37 +242,6 @@ st.markdown("""
 - These are general patterns - every patient is unique
 - Always consult with healthcare professionals for personal advice
 - Early detection and regular check-ups are key to good health
-- Your healthcare team is here to support your journey to wellness
 
-*Data represents real patient experiences to help you understand healthcare better.*
-""")
-
-# Data source and disclaimer
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-**About This Dashboard**
-This shows general healthcare patterns to help you understand:
-- Common health conditions
-- Typical hospital experiences  
-- Recovery journeys
-- Healthcare costs
-
-*For personal medical advice, please consult your doctor.*
-""")
-
-# Add some sample patient stories in the sidebar for extra engagement
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📖 Patient Story Examples")
-st.sidebar.markdown("""
-**Maria, 45**
-- Condition: Hypertension  
-- Stay: 2 days
-- Outcome: Normal results
-- *"Regular check-ups helped catch it early"*
-
-**James, 68**
-- Condition: Arthritis
-- Stay: 5 days  
-- Outcome: Improved mobility
-- *"Physical therapy made a big difference"*
+*Data represents patient experiences to help you understand healthcare better.*
 """)
