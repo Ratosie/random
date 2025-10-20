@@ -146,7 +146,7 @@ with col1:
         values=gender_counts.values,
         names=gender_counts.index,
         title="Patient Gender Split",
-        color_discrete_sequence=['#4A90E2', '#FF6B9D'],
+        color_discrete_sequence=['#FF6B9D', '#4A90E2'],
         hover_data=[gender_counts.values],
         labels={'value': 'Patients'}
     )
@@ -424,4 +424,5 @@ st.markdown("""
     <p>Each chart tells a different part of the healthcare story</p>
 </div>
 """, unsafe_allow_html=True)
+
 
