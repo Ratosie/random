@@ -78,7 +78,7 @@ age_range = st.sidebar.slider(
     "Age Range",
     min_value=int(df['age'].min()),
     max_value=int(df['age'].max()),
-    value=(25, 65)
+    value=(13, 89)
 )
 
 # Apply filters
@@ -424,3 +424,4 @@ st.markdown("""
     <p>Each chart tells a different part of the healthcare story</p>
 </div>
 """, unsafe_allow_html=True)
+
