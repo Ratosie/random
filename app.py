@@ -16,7 +16,7 @@ st.set_page_config(
 # Load and clean data
 @st.cache_data
 def load_data():
-    df = pd.read_csv('cleaned_data.csv')
+    df = pd.read_csv('healthcare_dataset_no_duplicates.csv')
     
     # Clean column names
     df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_')
@@ -408,3 +408,4 @@ st.sidebar.markdown("""
 - **Biaya Pengobatan**: Analisis biaya dan asuransi  
 - **Demografi Pasien**: Usia, gender, golongan darah
 """)
+
