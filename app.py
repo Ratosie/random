@@ -408,4 +408,3 @@ st.sidebar.markdown("""
 - **Biaya Pengobatan**: Analisis biaya dan asuransi  
 - **Demografi Pasien**: Usia, gender, golongan darah
 """)
-
