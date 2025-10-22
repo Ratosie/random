@@ -414,4 +414,19 @@ elif analysis_focus == "Demografi Pasien":
     # Add subtitle with context
     st.caption(f"Menampilkan 8 rumah sakit teratas dari total {total_hospitals} rumah sakit")
     st.plotly_chart(fig_hospital_demo, use_container_width=True)
+
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #7F8C8D;">
+    <p><strong>Dashboard Analisis Kesehatan</strong> - Fokus: Tren Penyakit, Biaya Pengobatan, Demografi Pasien</p>
+</div>
+""", unsafe_allow_html=True)
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("""
+### Panduan Dashboard
+- **Tren Penyakit**: Pola temporal dan musiman
+- **Biaya Pengobatan**: Analisis biaya dan asuransi  
+- **Demografi Pasien**: Distribusi usia, jenis kelamin, golongan darah
 """)
