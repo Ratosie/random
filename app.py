@@ -7,7 +7,7 @@ import numpy as np
 
 # Page configuration
 st.set_page_config(
-    page_title="Hospital Health Dashboard",
+    page_title="Dashboard Analisis Kesehatan Rumah Sakit",
     page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -35,7 +35,7 @@ def load_data():
 
 df = load_data()
 
-# Simple styling
+# Professional styling
 st.markdown("""
 <style>
     .main-title {
@@ -43,39 +43,46 @@ st.markdown("""
         color: #2C3E50;
         text-align: center;
         margin-bottom: 1rem;
-        font-weight: bold;
+        font-weight: 700;
+        letter-spacing: -0.5px;
     }
     .section-title {
         font-size: 1.5rem;
         color: #2C3E50;
         margin: 2rem 0 1rem 0;
-        border-bottom: 3px solid #3498DB;
+        border-bottom: 2px solid #3498DB;
         padding-bottom: 0.5rem;
         font-weight: 600;
+    }
+    .metric-card {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 4px solid #3498DB;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # Header
-st.markdown('<div class="main-title">🏥 Dashboard Analisis Data Kesehatan</div>', unsafe_allow_html=True)
-st.markdown("### Fokus: Tren Penyakit, Biaya Pengobatan, Perbandingan Demografis Pasien")
+st.markdown('<div class="main-title">Dashboard Analisis Kesehatan Rumah Sakit</div>', unsafe_allow_html=True)
+st.markdown("### Fokus: Tren Penyakit, Biaya Pengobatan, Demografi Pasien")
 
 # Sidebar navigation
-st.sidebar.header("🧭 Navigasi Analisis")
+st.sidebar.header("Navigasi")
 analysis_focus = st.sidebar.radio(
     "Pilih Fokus Analisis:",
-    ["Tren Penyakit", "Biaya Pengobatan", "Perbandingan Demografis Pasien"]
+    ["Tren Penyakit", "Biaya Pengobatan", "Demografi Pasien"]
 )
 
 # Global filters
-st.sidebar.header("🎛️ Filter Data")
+st.sidebar.header("Filter Data")
 year_filter = st.sidebar.selectbox(
     "Periode Waktu",
     options=["Semua Tahun"] + sorted(df['date_of_admission'].dt.year.dropna().unique().tolist())
 )
 
 condition_filter = st.sidebar.selectbox(
-    "Kondisi Kesehatan",
+    "Kondisi Medis",
     options=["Semua Kondisi"] + sorted(df['medical_condition'].unique().tolist())
 )
 
@@ -95,7 +102,7 @@ if condition_filter != "Semua Kondisi":
 filtered_df = filtered_df[(filtered_df['age'] >= age_range[0]) & (filtered_df['age'] <= age_range[1])]
 
 # Quick Stats
-st.markdown("## 📊 Ringkasan Cepat")
+st.markdown("## Summary")
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
@@ -103,30 +110,27 @@ with col1:
 
 with col2:
     avg_stay = filtered_df['length_of_stay'].mean()
-    delta_color = "normal" if avg_stay < 7 else "inverse"
-    st.metric("Rata-rata Rawat", f"{avg_stay:.1f} hari", delta_color=delta_color)
+    st.metric("Rata-rata Masa Rawat", f"{avg_stay:.1f} hari")
 
 with col3:
     avg_bill = filtered_df['billing_amount'].mean()
-    delta_color = "normal" if avg_bill < 20000 else "inverse"
-    st.metric("Rata-rata Biaya", f"${avg_bill:,.0f}", delta_color=delta_color)
+    st.metric("Rata-rata Biaya", f"${avg_bill:,.0f}")
 
 with col4:
     recovery_rate = (filtered_df['test_results'] == 'Normal').mean() * 100
-    delta_color = "normal" if recovery_rate > 60 else "inverse"
-    st.metric("Tingkat Pemulihan", f"{recovery_rate:.1f}%", delta_color=delta_color)
+    st.metric("Tingkat Pemulihan", f"{recovery_rate:.1f}%")
 
 # ============================================================
 # 1️⃣ TREN PENYAKIT
 # ============================================================
 if analysis_focus == "Tren Penyakit":
-    st.markdown('<div class="section-title">📈 Analisis Tren Penyakit</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Analisis Tren Penyakit</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        # Line Chart: Tren penyakit dari waktu ke waktu
-        st.subheader("📆 Tren Penyakit dari Waktu ke Waktu")
+        # Line Chart: Disease trends over time
+        st.subheader("Tren Penyakit Berdasarkan Waktu")
         
         # Prepare data for monthly trends
         monthly_trend = filtered_df.groupby([
@@ -140,7 +144,7 @@ if analysis_focus == "Tren Penyakit":
                 x='date_of_admission',
                 y='jumlah_pasien',
                 color='medical_condition',
-                title="Tren Jumlah Pasien per Penyakit",
+                title="Tren Jumlah Pasien per Kondisi Medis",
                 markers=True
             )
             fig_trend.update_layout(
@@ -151,26 +155,41 @@ if analysis_focus == "Tren Penyakit":
             st.plotly_chart(fig_trend, use_container_width=True)
     
     with col2:
-        # Top conditions
-        st.subheader("🩺 Penyakit Paling Umum")
+        # Top conditions - simple version
+        st.subheader("Kondisi Medis Paling Umum")
         top_conditions = filtered_df['medical_condition'].value_counts().head(10)
         
-        for condition, count in top_conditions.items():
-            percentage = (count / len(filtered_df)) * 100
-            st.write(f"**{condition}**")
-            st.write(f"{count} pasien ({percentage:.1f}%)")
-            st.progress(percentage/100)
+        fig_top_conditions = px.bar(
+            x=top_conditions.values,
+            y=top_conditions.index,
+            orientation='h',
+            title="Distribusi Kondisi Medis",
+            labels={'x': 'Jumlah Pasien', 'y': ''},
+            color=top_conditions.values,
+            color_continuous_scale='Blues'
+        )
+        
+        fig_top_conditions.update_layout(
+            showlegend=False,
+            yaxis={'categoryorder': 'total ascending'},
+            margin=dict(l=20, r=20, t=50, b=20)
+        )
+        
+        st.plotly_chart(fig_top_conditions, use_container_width=True)
+        
+        # Optional: Show summary statistics
+        st.caption(f"Total {len(filtered_df)} pasien • {top_conditions.index[0]} paling umum ({top_conditions.iloc[0]} pasien)")
     
     # Seasonal patterns
-    st.subheader("📅 Pola Musiman Kunjungan Rumah Sakit")
+    st.subheader("Pola Kunjungan Rumah Sakit Musiman")
     monthly_visits = filtered_df['date_of_admission'].dt.month.value_counts().sort_index()
     
     # Ensure all months are represented
     all_months = pd.Series(range(1, 13), index=range(1, 13))
     monthly_visits_complete = all_months.map(monthly_visits).fillna(0)
     
-    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-                   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    month_names = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 
+                   'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
     
     fig_seasonal = px.bar(
         x=month_names,
@@ -182,60 +201,57 @@ if analysis_focus == "Tren Penyakit":
     )
     st.plotly_chart(fig_seasonal, use_container_width=True)
     
-    # Admission types by condition - CHANGED TO GROUPED BAR
-    st.subheader("🏥 Tipe Penerimaan per Penyakit")
+    # Admission types by condition
+    st.subheader("Tipe Penerimaan per Kondisi Medis")
     admission_condition = filtered_df.groupby(['medical_condition', 'admission_type']).size().reset_index(name='jumlah')
-    
+
     fig_admission = px.bar(
         admission_condition,
         x='medical_condition',
         y='jumlah',
         color='admission_type',
-        title="Distribusi Tipe Penerimaan per Penyakit",
-        barmode='group'  # Changed from 'stack' to 'group'
+        title="Distribusi Tipe Penerimaan per Kondisi Medis",
+        barmode='group',
+        color_discrete_map={
+            'Emergency': '#DC2626',
+            'Urgent': '#EA580C', 
+            'Elective': '#16A34A'
+        }
     )
-    fig_admission.update_layout(xaxis_title="Penyakit", yaxis_title="Jumlah Pasien")
+    
+    fig_admission.update_layout(xaxis_title="Kondisi Medis", yaxis_title="Jumlah Pasien")
     st.plotly_chart(fig_admission, use_container_width=True)
 
 # ============================================================
 # 2️⃣ BIAYA PENGOBATAN
 # ============================================================
 elif analysis_focus == "Biaya Pengobatan":
-    st.markdown('<div class="section-title">💰 Analisis Biaya Pengobatan</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">Analisis Biaya Pengobatan</div>', unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
+    # Average cost by hospital
+    st.subheader("Rata-rata Biaya per Rumah Sakit")
+    hospital_costs = filtered_df.groupby('hospital')['billing_amount'].mean().sort_values(ascending=False).head(10)
     
-    with col1:
-        # Cost distribution by condition
-        st.subheader("📊 Distribusi Biaya per Penyakit")
-        fig_cost_box = px.box(
-            filtered_df,
-            x='medical_condition',
-            y='billing_amount',
-            color='medical_condition',
-            title="Distribusi Biaya Pengobatan per Penyakit"
-        )
-        fig_cost_box.update_layout(showlegend=False, xaxis_title="Penyakit", yaxis_title="Biaya ($)")
-        st.plotly_chart(fig_cost_box, use_container_width=True)
+    fig_hospital_cost = px.bar(
+        x=hospital_costs.values,
+        y=hospital_costs.index,
+        orientation='h',
+        title="10 Rumah Sakit dengan Biaya Tertinggi",
+        labels={'x': 'Rata-rata Biaya ($)', 'y': 'Rumah Sakit'},
+        color=hospital_costs.values,
+        color_continuous_scale='Reds'
+    )
     
-    with col2:
-        # Average cost by hospital
-        st.subheader("🏥 Rata-rata Biaya per Rumah Sakit")
-        hospital_costs = filtered_df.groupby('hospital')['billing_amount'].mean().sort_values(ascending=False).head(10)
-        
-        fig_hospital_cost = px.bar(
-            x=hospital_costs.values,
-            y=hospital_costs.index,
-            orientation='h',
-            title="10 Rumah Sakit dengan Biaya Tertinggi",
-            labels={'x': 'Rata-rata Biaya ($)', 'y': 'Rumah Sakit'},
-            color=hospital_costs.values,
-            color_continuous_scale='Reds'
-        )
-        st.plotly_chart(fig_hospital_cost, use_container_width=True)
+    fig_hospital_cost.update_layout(
+        autosize=True,
+        margin=dict(l=20, r=20, t=50, b=20),
+    )
+    fig_hospital_cost.update_yaxes(autorange="reversed")
+    
+    st.plotly_chart(fig_hospital_cost, use_container_width=True)
     
     # Insurance and costs
-    st.subheader("🧾 Biaya berdasarkan Asuransi")
+    st.subheader("Analisis Biaya Berdasarkan Asuransi")
     col1, col2 = st.columns(2)
     
     with col1:
@@ -256,48 +272,55 @@ elif analysis_focus == "Biaya Pengobatan":
             y=insurance_costs.values,
             title="Rata-rata Biaya per Provider Asuransi",
             labels={'x': 'Provider Asuransi', 'y': 'Rata-rata Biaya ($)'},
-            color=insurance_costs.values,
-            color_continuous_scale='Greens'
+            color=insurance_costs.index,  # Add this line to enable color mapping
+            color_discrete_map={
+                'Cigna': "#75B0EB",
+                'Medicare': "#2F5FE3", 
+                'UnitedHealthCare': "#EDC0D0",
+                'Blue Cross': "#E20B0B",
+                'Aetna': "#7BD894",
+            }
         )
+        fig_insurance_cost.update_layout(showlegend=False)  # Hide legend since colors are self-explanatory
         st.plotly_chart(fig_insurance_cost, use_container_width=True)
     
     # Cost vs Recovery analysis
-    st.subheader("🔍 Hubungan Biaya dengan Tingkat Pemulihan")
+    st.subheader("Analisis Hubungan Biaya dengan Tingkat Pemulihan")
     condition_analysis = filtered_df.groupby('medical_condition').agg({
         'billing_amount': 'mean',
         'test_results': lambda x: (x == 'Normal').mean() * 100,
         'length_of_stay': 'mean'
     }).round(2).reset_index()
     
-    condition_analysis.columns = ['Penyakit', 'Biaya_Rata', 'Tingkat_Pemulihan', 'Rawat_Rata']
+    condition_analysis.columns = ['Kondisi_Medis', 'Biaya_Rata', 'Tingkat_Pemulihan', 'Masa_Rawat_Rata']
     
     fig_cost_recovery = px.scatter(
         condition_analysis,
         x='Biaya_Rata',
         y='Tingkat_Pemulihan',
-        size='Rawat_Rata',
-        color='Penyakit',
+        size='Masa_Rawat_Rata',
+        color='Kondisi_Medis',
         title="Hubungan Biaya Pengobatan dengan Tingkat Pemulihan",
         labels={
             'Biaya_Rata': 'Rata-rata Biaya ($)',
             'Tingkat_Pemulihan': 'Tingkat Pemulihan (%)',
-            'Rawat_Rata': 'Lama Rawat (hari)'
+            'Masa_Rawat_Rata': 'Rata-rata Masa Rawat (hari)'
         },
-        hover_data=['Penyakit', 'Biaya_Rata', 'Tingkat_Pemulihan', 'Rawat_Rata']
+        hover_data=['Kondisi_Medis', 'Biaya_Rata', 'Tingkat_Pemulihan', 'Masa_Rawat_Rata']
     )
     st.plotly_chart(fig_cost_recovery, use_container_width=True)
 
 # ============================================================
-# 3️⃣ PERBANDINGAN DEMOGRAFIS PASIEN
+# 3️⃣ DEMOGRAFI PASIEN
 # ============================================================
-elif analysis_focus == "Perbandingan Demografis Pasien":
-    st.markdown('<div class="section-title">👥 Analisis Demografis Pasien</div>', unsafe_allow_html=True)
+elif analysis_focus == "Demografi Pasien":
+    st.markdown('<div class="section-title">Analisis Demografi Pasien</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
         # Age distribution
-        st.subheader("🎂 Distribusi Usia Pasien")
+        st.subheader("Distribusi Usia Pasien")
         
         # Create age groups
         age_bins = [0, 18, 35, 50, 65, 100]
@@ -319,7 +342,7 @@ elif analysis_focus == "Perbandingan Demografis Pasien":
     
     with col2:
         # Gender distribution
-        st.subheader("⚧ Distribusi Jenis Kelamin")
+        st.subheader("Distribusi Jenis Kelamin")
         gender_counts = filtered_df['gender'].value_counts()
         
         fig_gender = px.pie(
@@ -331,8 +354,8 @@ elif analysis_focus == "Perbandingan Demografis Pasien":
         fig_gender.update_traces(textinfo='percent+label')
         st.plotly_chart(fig_gender, use_container_width=True)
     
-    # Gender by condition - CHANGED TO GROUPED BAR
-    st.subheader("🩺 Penyakit berdasarkan Jenis Kelamin")
+    # Gender by condition
+    st.subheader("Kondisi Medis berdasarkan Jenis Kelamin")
     gender_condition = filtered_df.groupby(['medical_condition', 'gender']).size().reset_index(name='jumlah')
     top_conditions = gender_condition.groupby('medical_condition')['jumlah'].sum().nlargest(6).index
     gender_condition_top = gender_condition[gender_condition['medical_condition'].isin(top_conditions)]
@@ -342,15 +365,15 @@ elif analysis_focus == "Perbandingan Demografis Pasien":
         x='medical_condition',
         y='jumlah',
         color='gender',
-        title="6 Penyakit Terbanyak berdasarkan Jenis Kelamin",
-        labels={'jumlah': 'Jumlah Pasien', 'medical_condition': 'Penyakit'},
+        title="6 Kondisi Medis Terbanyak berdasarkan Jenis Kelamin",
+        labels={'jumlah': 'Jumlah Pasien', 'medical_condition': 'Kondisi Medis'},
         color_discrete_sequence=['#FF6B9D', '#4A90E2'],
-        barmode='group'  # Changed from 'group' to 'group' (already was grouped, but keeping for consistency)
+        barmode='group'
     )
     st.plotly_chart(fig_gender_condition, use_container_width=True)
     
     # Blood type distribution
-    st.subheader("🩸 Distribusi Golongan Darah")
+    st.subheader("Distribusi Golongan Darah")
     blood_counts = filtered_df['blood_type'].value_counts()
     
     fig_blood = px.bar(
@@ -364,8 +387,8 @@ elif analysis_focus == "Perbandingan Demografis Pasien":
     fig_blood.update_layout(showlegend=False)
     st.plotly_chart(fig_blood, use_container_width=True)
     
-    # Hospital demographics - CHANGED TO GROUPED BAR
-    st.subheader("🏥 Distribusi Pasien per Rumah Sakit")
+    # Hospital demographics
+    st.subheader("Distribusi Pasien per Rumah Sakit")
     
     total_hospitals = filtered_df['hospital'].nunique()
     total_patients = len(filtered_df)
@@ -382,7 +405,7 @@ elif analysis_focus == "Perbandingan Demografis Pasien":
         x='hospital',
         y='jumlah',
         color='gender',
-        title=f"8 Rumah Sakit dengan Pasien Terbanyak ({percentage_of_total:.1f}% dari {total_patients:,} total pasien)",
+        title=f"8 Rumah Sakit dengan Volume Pasien Tertinggi ({percentage_of_total:.1f}% dari {total_patients:,} total pasien)",
         labels={'jumlah': 'Jumlah Pasien', 'hospital': 'Rumah Sakit'},
         color_discrete_sequence=['#FF6B9D', '#4A90E2'],
         barmode='group'
@@ -391,20 +414,4 @@ elif analysis_focus == "Perbandingan Demografis Pasien":
     # Add subtitle with context
     st.caption(f"Menampilkan 8 rumah sakit teratas dari total {total_hospitals} rumah sakit")
     st.plotly_chart(fig_hospital_demo, use_container_width=True)
-
-    
-# Footer
-st.markdown("---")
-st.markdown("""
-<div style="text-align: center; color: #7F8C8D;">
-    <p><strong>Dashboard Analisis Kesehatan</strong> - Fokus: Tren Penyakit, Biaya Pengobatan, Perbandingan Demografis Pasien</p>
-</div>
-""", unsafe_allow_html=True)
-
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-### 📊 Panduan Dashboard
-- **Tren Penyakit**: Pola waktu dan musiman
-- **Biaya Pengobatan**: Analisis biaya dan asuransi  
-- **Demografi Pasien**: Usia, gender, golongan darah
 """)
